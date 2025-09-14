@@ -6,27 +6,16 @@ const connectDatabase = async (): Promise<void> => {
 
     const conn = await mongoose.connect(mongoURI);
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`📊 Database Name: ${conn.connection.name}`);
+    console.log(`📊 MongoDB Connected: ${conn.connection.name}`);
 
-    // Handle connection events
     mongoose.connection.on('error', (error) => {
       console.error('❌ MongoDB connection error:', error);
     });
 
-    mongoose.connection.on('disconnected', () => {
-      console.log('⚠️ MongoDB disconnected');
-    });
 
-    mongoose.connection.on('reconnected', () => {
-      console.log('🔄 MongoDB reconnected');
-    });
-
-    // Graceful shutdown
     process.on('SIGINT', async () => {
       try {
         await mongoose.connection.close();
-        console.log('🔒 MongoDB connection closed through app termination');
         process.exit(0);
       } catch (error) {
         console.error('❌ Error during MongoDB connection closure:', error);
@@ -40,12 +29,10 @@ const connectDatabase = async (): Promise<void> => {
   }
 };
 
-// Function to check database connection status
 export const isDatabaseConnected = (): boolean => {
   return mongoose.connection.readyState === 1;
 };
 
-// Function to get database connection info
 export const getDatabaseInfo = () => {
   const connection = mongoose.connection;
   return {

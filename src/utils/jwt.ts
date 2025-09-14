@@ -132,12 +132,10 @@ export const isTokenExpired = (token: string): boolean => {
 export const extractTokenFromHeader = (authHeader: string | undefined): string | null => {
   if (!authHeader) return null;
   
-  // Check for Bearer token format
   if (authHeader.startsWith('Bearer ')) {
     return authHeader.substring(7);
   }
   
-  // Return the header as-is if it doesn't have Bearer prefix
   return authHeader;
 };
 
@@ -146,6 +144,7 @@ export const extractTokenFromHeader = (authHeader: string | undefined): string |
  */
 export const createJWTPayload = (user: any): JWTPayload => {
   return {
+    userId: user._id.toString(),
     id: user._id.toString(),
     email: user.email,
     plan: user.plan,

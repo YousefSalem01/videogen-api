@@ -1,16 +1,19 @@
 import { Router } from 'express';
 import {
   register,
+  verifyEmail,
+  resendVerification,
   login,
   getMe,
   refreshToken,
   forgotPassword,
+  verifyResetCode,
   resetPassword,
   updateProfile,
   changePassword,
   logout,
   deleteAccount,
-} from '../controllers/authController';
+} from '../controllers/auth.controller';
 import { protect } from '../middleware/auth';
 import {
   validateRegister,
@@ -27,12 +30,28 @@ const router = Router();
  * Public Routes (No authentication required)
  */
 
-// Register new user
+// Register new user (step 1)
 router.post(
   '/register',
   requireContentType('application/json'),
   validateRegister,
   register
+);
+
+// Verify email with code (step 2)
+router.post(
+  '/verify-email',
+  requireContentType('application/json'),
+  sanitizeRequestBody(['userId', 'code']),
+  verifyEmail
+);
+
+// Resend verification code
+router.post(
+  '/resend-verification',
+  requireContentType('application/json'),
+  sanitizeRequestBody(['userId']),
+  resendVerification
 );
 
 // Login user
@@ -59,11 +78,19 @@ router.post(
   forgotPassword
 );
 
-// Reset password
+// Verify reset code
+router.post(
+  '/verify-reset-code',
+  requireContentType('application/json'),
+  sanitizeRequestBody(['email', 'code']),
+  verifyResetCode
+);
+
+// Reset password with code
 router.post(
   '/reset-password',
   requireContentType('application/json'),
-  validateResetPasswordData,
+  sanitizeRequestBody(['email', 'code', 'password']),
   resetPassword
 );
 

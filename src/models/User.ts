@@ -25,7 +25,7 @@ const userSchema = new Schema<IUser>({
     type: String,
     required: [true, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters'],
-    select: false, // Don't include password in queries by default
+    select: false,
   },
   plan: {
     type: String,
@@ -40,11 +40,15 @@ const userSchema = new Schema<IUser>({
     type: Boolean,
     default: false,
   },
-  emailVerificationToken: {
+  emailVerificationCode: {
     type: String,
     select: false,
   },
-  passwordResetToken: {
+  emailVerificationExpires: {
+    type: Date,
+    select: false,
+  },
+  passwordResetCode: {
     type: String,
     select: false,
   },
@@ -69,14 +73,11 @@ const userSchema = new Schema<IUser>({
   toObject: { virtuals: true },
 });
 
-// Indexes for better performance
 userSchema.index({ email: 1 });
 userSchema.index({ passwordResetToken: 1 });
 userSchema.index({ emailVerificationToken: 1 });
 
-// Hash password before saving
 userSchema.pre('save', async function(next) {
-  // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) return next();
 
   try {
@@ -88,7 +89,6 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Update lastLogin before saving
 userSchema.pre('save', function(next) {
   if (this.isNew) {
     this.lastLogin = new Date();
@@ -96,7 +96,6 @@ userSchema.pre('save', function(next) {
   next();
 });
 
-// Instance method to compare password
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
@@ -105,29 +104,24 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
   }
 };
 
-// Instance method to generate password reset token
 userSchema.methods.generatePasswordResetToken = function(): string {
   // Generate token
   const resetToken = crypto.randomBytes(32).toString('hex');
   
-  // Hash token and set to passwordResetToken field
   this.passwordResetToken = crypto
     .createHash('sha256')
     .update(resetToken)
     .digest('hex');
   
-  // Set expire time (10 minutes)
   this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
   
   return resetToken;
 };
 
-// Instance method to generate email verification token
 userSchema.methods.generateEmailVerificationToken = function(): string {
   // Generate token
   const verificationToken = crypto.randomBytes(32).toString('hex');
   
-  // Hash token and set to emailVerificationToken field
   this.emailVerificationToken = crypto
     .createHash('sha256')
     .update(verificationToken)
@@ -136,7 +130,6 @@ userSchema.methods.generateEmailVerificationToken = function(): string {
   return verificationToken;
 };
 
-// Static method to find user by password reset token
 userSchema.statics.findByPasswordResetToken = function(token: string) {
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
   
@@ -146,7 +139,6 @@ userSchema.statics.findByPasswordResetToken = function(token: string) {
   });
 };
 
-// Static method to find user by email verification token
 userSchema.statics.findByEmailVerificationToken = function(token: string) {
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
   
@@ -155,7 +147,6 @@ userSchema.statics.findByEmailVerificationToken = function(token: string) {
   });
 };
 
-// Virtual for user's full profile
 userSchema.virtual('profile').get(function() {
   return {
     id: this._id,
@@ -170,7 +161,6 @@ userSchema.virtual('profile').get(function() {
   };
 });
 
-// Remove sensitive fields from JSON output
 userSchema.methods.toJSON = function() {
   const userObject = this.toObject();
   delete userObject.password;

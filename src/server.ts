@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import connectDatabase from './config/database';
-import authRoutes from './routes/authRoutes';
+import authRoutes from './routes/auth.route';
 import { globalErrorHandler, notFound } from './middleware/errorHandler';
 
 // Load environment variables
@@ -86,22 +86,7 @@ app.use(express.json({
 
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-/**
- * Request Logging Middleware (Development)
- */
-if (process.env.NODE_ENV === 'development') {
-  app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    if (req.body && Object.keys(req.body).length > 0) {
-      console.log('Request body:', JSON.stringify(req.body, null, 2));
-    }
-    next();
-  });
-}
-
-/**
- * Health Check Route
- */
+// Health Check Route
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -153,15 +138,7 @@ const startServer = async () => {
     
     // Start listening
     const server = app.listen(PORT, () => {
-      console.log('\n🚀 ================================');
-      console.log(`🎬 AI VideoGen API Server Started`);
-      console.log('🚀 ================================');
-      console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🌐 Server: http://localhost:${PORT}`);
-      console.log(`🔗 Health Check: http://localhost:${PORT}/health`);
-      console.log(`🔐 Auth API: http://localhost:${PORT}/api/auth`);
-      console.log(`🎯 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
-      console.log('🚀 ================================\n');
+      console.log(`🚀 AI VideoGen API Server started on port ${PORT}`);
     });
 
     // Graceful shutdown handlers
